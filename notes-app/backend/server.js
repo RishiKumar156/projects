@@ -1,16 +1,23 @@
+// server.js
 const http = require('http');
+const { connectToMongoDB } = require('./config');
 
-const server = http.createServer((req, res) => {
-    const mongodbURL = 'mongodb+srv://rishik:sagpenty@cluster0.opou9wy.mongodb.net/?retryWrites=true&w=majority';
+const server = http.createServer(async (req, res) => {
     switch (req.url) {
         case '/':
             res.end('You reached the home page');
             break;
         case '/notes':
-            res.end('You reached the notes page');
-            break;
-        case '/createNotes':
-            res.end('You reached the create notes page');
+            try {
+                const db = await connectToMongoDB();
+                const collection = db.collection('notes-app');
+                const result = await collection.find().toArray();
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result));
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('Internal Server Error');
+            }
             break;
         default:
             res.end('Page not found');
@@ -18,6 +25,7 @@ const server = http.createServer((req, res) => {
     }
 });
 
-server.listen(3000, '127.0.0.1', () => {
-    console.log('Server running on port 3000');
+const PORT = 3000;
+server.listen(PORT, '127.0.0.1', () => {
+    console.log(`Server running on port ${PORT}`);
 });
